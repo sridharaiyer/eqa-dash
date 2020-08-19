@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.8-slim-buster
 
 RUN apt-get update && \
     apt-get install -y git gcc ncdu && \
@@ -17,7 +17,5 @@ RUN set -ex && \
 COPY . ./
 
 # Finally, run gunicorn.
-CMD [ "python", "--version"]
 CMD [ "gunicorn", "--workers=5", "--threads=1", "-b 0.0.0.0:8000", "app:server"]
-
 # gunicorn --workers=5 --threads=1 -b 0.0.0.0:8000 app:server
