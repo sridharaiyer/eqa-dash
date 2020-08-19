@@ -1,0 +1,11 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  # main application
+  web:
+    container_name: eqa_automation_dashboard
+    build:
+          context: .
+          dockerfile: Dockerfile
+    ports:
+      - "8000:8000"

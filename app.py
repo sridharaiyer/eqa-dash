@@ -7,7 +7,10 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 from dataframe import get_df_total_hours
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+from flask import Flask
+
+server = Flask(__name__)
+app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], server=server)
 
 time_periods = [
 # '2020-Q1',
@@ -129,4 +132,4 @@ def update_graphs(quarter):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()
