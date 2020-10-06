@@ -1,21 +1,18 @@
-FROM python:3.8-slim-buster
+FROM python:3.8-slim-buster AS compile-image
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends gcc git ncdu
 
-RUN apt-get update && \
-    apt-get install -y git gcc ncdu && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Create a working directory.
-RUN mkdir wd
-WORKDIR wd
+RUN pip install --upgrade pip
+RUN pip install dash pandas gunicorn xlrd dash-bootstrap-components
 
-RUN set -ex && \
-    pip install --upgrade pip && \
-    pip install dash pandas gunicorn xlrd dash-bootstrap-components && \
-    rm -rf /root/.cache
+FROM python:3.8-slim-buster AS build-image
+COPY --from=compile-image /opt/venv /opt/venv
 
-COPY . ./
-
-# Finally, run gunicorn.
+# Make sure we use the virtualenv:
+ENV PATH="/opt/venv/bin:$PATH"
+COPY . /wd
+WORKDIR /wd
 CMD [ "gunicorn", "--workers=5", "--threads=1", "-b 0.0.0.0:8000", "app:server"]
-# gunicorn --workers=5 --threads=1 -b 0.0.0.0:8000 app:server

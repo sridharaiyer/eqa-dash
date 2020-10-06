@@ -38,9 +38,13 @@ def get_df_total_hours(start_date, end_date):
     df_hours_series = reduce(lambda x, y: x.add(y, fill_value=0),
                              [df for df in df_persons.values()])
 
-    return pd.DataFrame(
+    df_total = pd.DataFrame(
         {
             'Projects': pd.Series(df_hours_series.sum().index),
             'Hours': pd.Series(df_hours_series.sum().values)
         }
-    ).set_index('Projects')
+    )
+
+    df_total = df_total[df_total['Hours'] > 0]
+
+    return df_total
