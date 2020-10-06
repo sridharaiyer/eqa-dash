@@ -60,6 +60,7 @@ def get_df_total_hours(start_date, end_date):
                       str_cols] = df_person.loc[:, str_cols].fillna('')
 
         df_persons[person_name] = df_person
+        del df_person
 
     # Combinaing all XLSX df into 1 and summing the project hours
     df_hours_series = reduce(lambda x, y: x.add(y, fill_value=0),
@@ -73,5 +74,43 @@ def get_df_total_hours(start_date, end_date):
     )
 
     df_total = df_total[df_total['Hours'] > 0]
+
+    return df_total
+# -----------------------------------------------------------
+# Block to get number of scripts DataFrame
+# -----------------------------------------------------------
+
+
+df_persons_scripts = {}
+
+
+def get_df_total_scripts(start_date, end_date):
+    for f in files_xlsx:
+        person_name = f.stem[:f.stem.index('_')]
+        df_person = pd.read_excel(f, index_col='Date', sheet_name='Scripts')
+        df_person = df_person.loc[start_date:end_date]
+        df_person.drop(['Day'], axis=1, inplace=True)
+        float_cols = df_person.select_dtypes(include=['float64']).columns
+        str_cols = df_person.select_dtypes(include=['object']).columns
+        df_person.loc[:,
+                      float_cols] = df_person.loc[:, float_cols].fillna(0)
+        df_person.loc[:,
+                      str_cols] = df_person.loc[:, str_cols].fillna('')
+
+        df_persons_scripts[person_name] = df_person
+        del df_person
+
+    # Combinaing all XLSX df into 1 and summing the project hours
+    df_scripts_series = reduce(lambda x, y: x.add(y, fill_value=0),
+                               [df for df in df_persons_scripts.values()])
+
+    df_total = pd.DataFrame(
+        {
+            'Projects': pd.Series(df_scripts_series.sum().index),
+            'Scripts': pd.Series(df_scripts_series.sum().values)
+        }
+    )
+
+    df_total = df_total[df_total['Scripts'] > 0]
 
     return df_total

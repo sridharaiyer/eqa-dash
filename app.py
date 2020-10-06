@@ -4,7 +4,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.express as px
-from dataframe import get_df_total_hours, METRICS_FILES_COUNT
+from dataframe import get_df_total_hours, METRICS_FILES_COUNT, get_df_total_scripts
 from datetime import datetime, timedelta
 from flask import Flask
 import math
@@ -112,27 +112,52 @@ app.layout = dbc.Container(
                 dbc.Col(dcc.Graph(id="num_proj_bar"), md=6),
             ]
         ),
+        html.Hr(),
+        html.H2("Number Of Scripts Developed",
+                style={
+                    'textAlign': 'center',
+                    'color': '#ad5555'
+                }),
+        dbc.Row(
+            [
+                dbc.Col(dcc.Graph(id="num_of_scripts"), md=12),
+            ]
+        ),
+        dbc.Row(
+            [
+                dbc.Col(dcc.Graph(id="script_count_table"), md=6)
+            ],
+            justify="center",
+        ),
     ],
     fluid=True,
 )
 
 
 @ app.callback(
-    [Output("the_alert", "children"),
-     Output("list_of_projects", "figure"),
-     Output("all_proj_hours", "figure"),
-     Output("type_pie", "figure"),
-     Output("num_proj_bar", "figure")],
+    [
+        Output("the_alert", "children"),
+        Output("list_of_projects", "figure"),
+        Output("all_proj_hours", "figure"),
+        Output("type_pie", "figure"),
+        Output("num_proj_bar", "figure"),
+        Output("num_of_scripts", "figure"),
+        Output("script_count_table", "figure")
+    ],
     [Input("quarter-selector", "value")]
 )
 def update_graphs(quarter):
     if METRICS_FILES_COUNT < 1:
         alert_msg = "No metrics data XLSX. Please contact EQA Support"
-        return (create_danger_alert(alert_msg),
-                dash.no_update,
-                dash.no_update,
-                dash.no_update,
-                dash.no_update)
+        return (
+            create_danger_alert(alert_msg),
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update
+        )
     else:
         start_date = period_dict[quarter][0]
         end_date = period_dict[quarter][1]
@@ -140,11 +165,15 @@ def update_graphs(quarter):
 
         if len(df_total_hours) == 0:
             alert_msg = f'No data found for period {start_date} to {end_date}'
-            return (create_danger_alert(alert_msg, dismissable=True),
-                    dash.no_update,
-                    dash.no_update,
-                    dash.no_update,
-                    dash.no_update)
+            return (
+                create_danger_alert(alert_msg, dismissable=True),
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update,
+                dash.no_update
+            )
 
         # -----------------------------------------------------------
         # fig1 - Total hours for each Project
@@ -239,7 +268,56 @@ def update_graphs(quarter):
             height=(max([len(core_df), len(mobile_df), len(poc_df), 8])/2)*100,
         )
 
-        return dash.no_update, fig4, fig1, fig2, fig3
+        # ---------------------------------------------------------
+        # Number of scripts
+        # ---------------------------------------------------------
+        df_total_scripts = get_df_total_scripts(start_date, end_date)
+
+        fig5 = px.bar(df_total_scripts, x='Projects', y='Scripts')
+        fig5.update_layout(
+            title=f"Total Scripts developed Per Project from {start_date} to {end_date}",
+            height=800,
+            xaxis={'title_text': '',
+                   'tickangle': 90
+                   }
+        )
+        fig5.update_xaxes(automargin=True)
+
+        # --------------------------------------------------------------------------------
+        # Adding 'Type' to the df_total_scripts
+        # --------------------------------------------------------------------------------
+        df_total_scripts['Type'] = df_total_scripts['Projects'].str.replace(
+            '-', ' ').str.split(n=1, expand=True)[0]
+        df_total_scripts['Projects'] = df_total_scripts['Projects'].str.split(
+            '-', n=1).str[1].str.strip()
+
+        num_of_core_scripts = df_total_scripts.groupby('Type')['Scripts'].sum().loc['Core']
+        num_of_mobile_scripts = df_total_scripts.groupby('Type')['Scripts'].sum().loc['Mobile']
+
+        fig6 = go.Figure(
+            data=[go.Table(
+                header=dict(values=list(['Core', 'Mobile']),
+                            fill_color='paleturquoise',
+                            align='center',
+                            font_size=18,
+                            height=38
+                            ),
+                cells=dict(values=[num_of_core_scripts, num_of_mobile_scripts],
+                           fill_color='lavender',
+                           align='center',
+                           font_size=16,
+                           height=35
+                           )
+
+            )
+            ])
+
+        fig6.update_layout(
+            autosize=True,
+            title=f"Total Scripts developed from {start_date} to {end_date}",
+        )
+
+        return dash.no_update, fig4, fig1, fig2, fig3, fig5, fig6
 
 
 if __name__ == "__main__":
