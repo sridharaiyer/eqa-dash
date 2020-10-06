@@ -2,15 +2,42 @@ import pandas as pd
 from pathlib import Path
 from functools import reduce
 
+
+def isTrueMetrics(metrics_file_path):
+    MANDATORY_SHEETS = ['Hours', 'Scripts', 'Comments']
+    df = pd.read_excel(metrics_file_path, None)
+
+    if sorted(MANDATORY_SHEETS) != sorted(df.keys()):
+        return False
+
+    df_sheet = pd.read_excel(metrics_file_path, sheet_name='Hours')
+    for col in ['Date', 'Day', 'Hours']:
+        if not (col in df_sheet):
+            return False
+
+    df_sheet = pd.read_excel(metrics_file_path, sheet_name='Scripts')
+    for col in ['Date', 'Day']:
+        if not (col in df_sheet):
+            return False
+
+    return True
+
+
 # The individual xlsx files are placed in the path >>
 # current_directory/data/metrics
 # Change the path of the files as needed
-metrics_dir = Path.joinpath(Path().absolute(), 'data/metrics/')
+METRICS_DATA_DIR = Path.home()/'eqa-dash-data'
 
 # Reading all the xlsx files
 # omitting any opened files, which will have the '~$' suffix
-files_xlsx = [f for f in metrics_dir.iterdir()
-              if (f.suffix == '.xlsx') & (f.stem[:2] != '~$')]
+files_xlsx = [f for f in METRICS_DATA_DIR.iterdir()
+              if ((f.is_file()) & (f.suffix == '.xlsx') & (f.stem[:2] != '~$'))
+              ]
+files_xlsx = list(filter(lambda f: isTrueMetrics(f), files_xlsx))
+
+
+METRICS_FILES_COUNT = len(files_xlsx)
+
 
 # Creating a list of dataframes of individual team members
 # This is being done, just in case if we want to do an individual's progress,

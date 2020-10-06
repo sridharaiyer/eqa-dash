@@ -4,15 +4,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.express as px
-from dataframe import get_df_total_hours
+from dataframe import get_df_total_hours, METRICS_FILES_COUNT
 from datetime import datetime, timedelta
 from flask import Flask
-import base64
-import io
-import os
-import pandas as pd
-from urllib.parse import quote as urlquote
-from pathlib import Path
 import math
 
 # csvpath = Path(__file__).parent.absolute()/'data'/'palmer-penguins.csv'
@@ -25,10 +19,6 @@ now_minus_90 = now - timedelta(90)
 previous_quarter = f'{now.year}-Q{math.ceil(now_minus_90.month/3)}'
 this_quarter = f'{now.year}-Q{math.ceil(now.month/3)}'
 
-METRICS_DATA_DIR = Path.home()/'eqa-dash-data'
-
-file_count = len([name for name in os.listdir(METRICS_DATA_DIR)
-                  if not name.startswith(".")])
 
 time_periods = [
     f'{year - 1}-Annual',
@@ -136,7 +126,7 @@ app.layout = dbc.Container(
     [Input("quarter-selector", "value")]
 )
 def update_graphs(quarter):
-    if file_count < 1:
+    if METRICS_FILES_COUNT < 1:
         alert_msg = "No metrics data XLSX. Please contact EQA Support"
         return (create_danger_alert(alert_msg),
                 dash.no_update,
