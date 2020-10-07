@@ -23,30 +23,32 @@ def isTrueMetrics(metrics_file_path):
     return True
 
 
-# The individual xlsx files are placed in the path >>
-# current_directory/data/metrics
-# Change the path of the files as needed
-METRICS_DATA_DIR = Path.home()/'eqa-dash-data'
+def get_files():
 
-# Reading all the xlsx files
-# omitting any opened files, which will have the '~$' suffix
-files_xlsx = [f for f in METRICS_DATA_DIR.iterdir()
-              if ((f.is_file()) & (f.suffix == '.xlsx') & (f.stem[:2] != '~$'))
-              ]
-files_xlsx = list(filter(lambda f: isTrueMetrics(f), files_xlsx))
+    # The individual xlsx files are placed in the path >>
+    # current_directory/data/metrics
+    # Change the path of the files as needed
+    METRICS_DATA_DIR = Path.joinpath(Path.cwd(), 'data/metrics/')
+
+    # Reading all the xlsx files
+    # omitting any opened files, which will have the '~$' suffix
+    files_xlsx = [f for f in METRICS_DATA_DIR.iterdir()
+                  if ((f.is_file()) & (f.suffix == '.xlsx') & (f.stem[:2] != '~$'))
+                  ]
+    files_xlsx = list(filter(lambda f: isTrueMetrics(f), files_xlsx))
+    return files_xlsx
 
 
-METRICS_FILES_COUNT = len(files_xlsx)
-
-
-# Creating a list of dataframes of individual team members
-# This is being done, just in case if we want to do an individual's progress,
-# trends or throughput analysis
-df_persons = {}
+def get_file_count():
+    return len(get_files())
 
 
 def get_df_total_hours(start_date, end_date):
-    for f in files_xlsx:
+    # Creating a list of dataframes of individual team members
+    # This is being done, just in case if we want to do
+    # an individual's progress, trends or throughput analysis
+    df_persons = {}
+    for f in get_files():
         person_name = f.stem[:f.stem.index('_')]
         df_person = pd.read_excel(f, index_col='Date', sheet_name='Hours')
         df_person = df_person.loc[start_date:end_date]
@@ -81,11 +83,9 @@ def get_df_total_hours(start_date, end_date):
 # -----------------------------------------------------------
 
 
-df_persons_scripts = {}
-
-
 def get_df_total_scripts(start_date, end_date):
-    for f in files_xlsx:
+    df_persons_scripts = {}
+    for f in get_files():
         person_name = f.stem[:f.stem.index('_')]
         df_person = pd.read_excel(f, index_col='Date', sheet_name='Scripts')
         df_person = df_person.loc[start_date:end_date]

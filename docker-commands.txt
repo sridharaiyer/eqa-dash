@@ -1,0 +1,1 @@
+docker run -d --rm -it -p 8000:8000 --name eqa-metrics-dashboard -v ~/eqa-dash-data/:/wd/data/metrics sridharaiyer/eqa-metrics-dash:1.0.0 

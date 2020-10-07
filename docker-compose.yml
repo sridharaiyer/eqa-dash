@@ -10,3 +10,5 @@ services:
     image: eqa-dash:multi-stage-1.0
     ports:
       - "8000:8000"
+    volumes:
+      - "~/eqa-dash-data:/wd/data/metrics"

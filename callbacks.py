@@ -1,7 +1,7 @@
 from dash.dependencies import Output, Input
 import dash
 import plotly.express as px
-from dataframe import get_df_total_hours, METRICS_FILES_COUNT, get_df_total_scripts
+from dataframe import get_df_total_hours, get_file_count, get_df_total_scripts
 from layout import create_danger_alert, period_dict
 
 
@@ -19,7 +19,7 @@ def register_callbacks(app):
         [Input("quarter-selector", "value")]
     )
     def update_graphs(quarter):
-        if METRICS_FILES_COUNT < 1:
+        if get_file_count() < 1:
             alert_msg = "No metrics data XLSX. Please contact EQA Support"
             return (
                 create_danger_alert(alert_msg),
@@ -163,8 +163,16 @@ def register_callbacks(app):
             df_total_scripts['Projects'] = df_total_scripts['Projects'].str.split(
                 '-', n=1).str[1].str.strip()
 
-            num_of_core_scripts = df_total_scripts.groupby('Type')['Scripts'].sum().loc['Core']
-            num_of_mobile_scripts = df_total_scripts.groupby('Type')['Scripts'].sum().loc['Mobile']
+            try:
+                num_of_core_scripts = df_total_scripts.groupby('Type')['Scripts'].sum().loc['Core']
+            except KeyError:
+                num_of_core_scripts = 0
+
+            try:
+                num_of_mobile_scripts = df_total_scripts.groupby(
+                    'Type')['Scripts'].sum().loc['Mobile']
+            except KeyError:
+                num_of_mobile_scripts = 0
 
             fig6 = go.Figure(
                 data=[go.Table(
